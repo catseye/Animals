@@ -1,0 +1,2 @@
+#!/bin/sh
+erl -noshell -run animals -run init stop
