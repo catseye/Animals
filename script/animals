@@ -1,2 +1,2 @@
 #!/bin/sh
-erl -noshell -run animals -run init stop
+ERL_LIBS=`dirname $0`/../../ erl -noshell -run animals -run init stop

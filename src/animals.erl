@@ -1,7 +1,7 @@
 %%% BEGIN animals.erl %%%
 %%%
 %%% animals - Classic 'expert system' game of Animals, in Erlang
-%%% Copyright (c)2002 Cat's Eye Technologies.  All rights reserved.
+%%% Copyright (c)2002-2010 Cat's Eye Technologies.  All rights reserved.
 %%%
 %%% Redistribution and use in source and binary forms, with or without
 %%% modification, are permitted provided that the following conditions
@@ -19,19 +19,18 @@
 %%%   contributors may be used to endorse or promote products derived
 %%%   from this software without specific prior written permission.
 %%%
-%%% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-%%% CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
-%%% INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-%%% MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-%%% DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE
-%%% LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-%%% OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-%%% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-%%% OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-%%% ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-%%% OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-%%% OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-%%% POSSIBILITY OF SUCH DAMAGE. 
+%%% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+%%% ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+%%% LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+%%% FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+%%% COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+%%% INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+%%% (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+%%% SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+%%% HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+%%% STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+%%% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+%%% OF THE POSSIBILITY OF SUCH DAMAGE. 
 
 %% @doc The classic 'expert system' demonstration game of Animals.
 %%
@@ -44,9 +43,9 @@
 %% @end
 
 -module(animals).
--vsn('$Id: animals.erl 5 2004-09-20 02:22:25Z catseye $').
--author('cpressey@catseye.mine.nu').
--copyright('Copyright (c)2002-2004 Cat`s Eye Technologies. All rights reserved.').
+-vsn('$Id: animals.erl 531 2010-04-29 20:05:21Z cpressey $').
+-author('cpressey@catseye.tc').
+-copyright('Copyright (c)2002-2010 Cat`s Eye Technologies. All rights reserved.').
 
 -export([start/0]).
 
@@ -115,7 +114,7 @@ guess({animal, Animal}, AllAnimals) ->
       end
   end.
 
-%%% Utilities
+%%% High-level Utilities
 
 %% @spec load() -> tree()
 %% @doc Loads the animal knowledge tree from <code>animals.dat</code>.
@@ -133,7 +132,7 @@ load() ->
 %% @doc Saves the animal knowledge tree to <code>animals.dat</code>.
 
 save(Animals) ->
-  case ce_file:dump(filename:join([code:priv_dir(animals), "animals.dat"]),
+  case file_dump(filename:join([code:priv_dir(animals), "animals.dat"]),
    [Animals]) of
     {ok, [Animals]} ->
       ok;
@@ -167,7 +166,7 @@ num_leaves({animal, _Animal}) -> 1.
 %% to the given noun.
 
 indefart(Noun) ->
-  case hd(ce_string:uc(Noun)) of
+  case hd(uc(Noun)) of
     N when N == $A; N == $E; N == $I; N == $O; N == $U ->
       "an " ++ Noun;
     _ ->
@@ -180,7 +179,7 @@ indefart(Noun) ->
 get_y_or_n(Prompt) ->
   io:fwrite("~s", [Prompt]),
   Response = io:get_line(''),
-  case string:strip(ce_string:uc(Response)) of
+  case string:strip(uc(Response)) of
     "Y" ++ _Remainder ->
       true;
     "N" ++ _Remainder ->
@@ -195,22 +194,24 @@ get_y_or_n(Prompt) ->
 
 get_animal_name() ->
   io:fwrite("What was the name of the animal you were thinking of? "),
-  case ce_string:chomp(io:get_line('')) of
+  case chomp(io:get_line('')) of
     "" ->
       io:fwrite("Sorry, I didn't quite catch that.~n"),
       get_animal_name();
     AnimalName ->
-      ce_string:lc(AnimalName)
+      lc(AnimalName)
   end.
 
 get_question() ->
-  case ce_string:chomp(io:get_line('> ')) of
+  case chomp(io:get_line('> ')) of
     "" ->
       io:fwrite("Sorry, I didn't quite catch that.~n"),
       get_question();
     Question ->
       strip_question_marks([to_upper(hd(Question)) | tl(Question)])
   end.
+
+%%% Low-level Utilities
 
 strip_question_marks(String) ->
   lists:reverse(strip_question_marks0(lists:reverse(String))).
@@ -220,7 +221,52 @@ strip_question_marks0([$? | Rest]) ->
 strip_question_marks0(Else) ->
   Else.
 
+%% @spec chomp(string()) -> string()
+%% @doc Removes all newlines from the end of a string.
+%% Should work on both Unix and MS-DOS newlines.
+
+chomp([]) -> [];
+chomp(List) when is_list(List) ->
+  lists:reverse(chomp0(lists:reverse(List))).
+chomp0([]) -> [];
+chomp0([H | T]) when H == 10; H == 13 -> chomp0(T);
+chomp0([_ | _]=L) -> L.
+
+%% @spec uc(string()) -> string()
+%% @doc Translates a string to uppercase. Also flattens the list.
+
+uc(L) -> uc(L, []).
+uc([], A) -> A;
+uc([H|T], A) -> uc(T, A ++ [uc(H)]);
+uc(L, _) -> to_upper(L).
+
 to_upper(X) when X >= $a, X =< $z -> X + ($A - $a);
 to_upper(X)                       -> X.
+
+%% @spec lc(string()) -> string()
+%% @doc Translates a string to lowercase. Also flattens the list.
+
+lc(L) -> lc(L, []).
+lc([], A) -> A;
+lc([H|T], A) -> lc(T, A ++ [lc(H)]);
+lc(L, _) -> to_lower(L).
+
+to_lower(X) when X >= $A, X =< $Z -> X + ($a - $A);
+to_lower(X)                       -> X.
+
+%% @spec file_dump(filename(), [term()]) -> {ok, [term()]} | {error, Reason}
+%% @doc Writes all terms to a file.  Complements file:consult/1.
+
+file_dump(Filename, List) ->
+  case file:open(Filename, [write]) of
+    {ok, Device} ->
+      lists:foreach(fun(Term) ->
+                      io:fwrite(Device, "~p.~n", [Term])
+		    end, List),
+      file:close(Device),
+      {ok, List};
+    Other ->
+      Other
+  end.
 
 %%% END of animals.erl %%%
