@@ -13,6 +13,12 @@ nested tuple structure.  This is mainly to demonstrate how one can work
 with binary trees as Erlang terms.  A more serious implementation would
 probably use a real database system, such as Mnesia.
 
+License
+-------
+
+This work is in the public domain.  See the file `UNLICENSE` for more
+information.
+
 Running
 -------
 
